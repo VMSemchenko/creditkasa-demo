@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CreditKasa Support AI Copilot – Review Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-primary: #0f1117;
+      --bg-card: #1a1d27;
+      --bg-card-hover: #22263a;
+      --accent: #6c63ff;
+      --accent-hover: #8b84ff;
+      --success: #22c55e;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --text-primary: #f0f0f5;
+      --text-secondary: #8b8fa3;
+      --border: #2a2e3d;
+      --radius: 12px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+    }
+
+    header {
+      background: linear-gradient(135deg, #1a1d27 0%, #22263a 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 1.5rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    header h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent) 0%, #a78bfa 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .stats {
+      display: flex;
+      gap: 1rem;
+    }
+
+    .stat-badge {
+      padding: 0.35rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .stat-badge.pending { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
+    .stat-badge.approved { background: rgba(34, 197, 94, 0.15); color: var(--success); }
+    .stat-badge.rejected { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
+
+    .container {
+      max-width: 960px;
+      margin: 2rem auto;
+      padding: 0 1.5rem;
+    }
+
+    /* Submit form */
+    .submit-section {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .submit-section h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: var(--text-secondary);
+    }
+
+    .form-row {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+
+    textarea, input[type="text"] {
+      flex: 1;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 0.875rem;
+      resize: vertical;
+      transition: border-color 0.2s;
+    }
+
+    textarea:focus, input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .btn {
+      padding: 0.6rem 1.25rem;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.8rem;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+    }
+    .btn-primary:hover { background: var(--accent-hover); transform: translateY(-1px); }
+
+    .btn-success {
+      background: rgba(34, 197, 94, 0.15);
+      color: var(--success);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+    .btn-success:hover { background: rgba(34, 197, 94, 0.3); }
+
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--danger);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+    .btn-danger:hover { background: rgba(239, 68, 68, 0.3); }
+
+    .btn-refresh {
+      background: rgba(108, 99, 255, 0.15);
+      color: var(--accent);
+      border: 1px solid rgba(108, 99, 255, 0.3);
+    }
+    .btn-refresh:hover { background: rgba(108, 99, 255, 0.3); }
+
+    /* Cards */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+      transition: border-color 0.3s, transform 0.2s;
+    }
+
+    .card:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.75rem;
+    }
+
+    .intent-badge {
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      background: rgba(108, 99, 255, 0.15);
+      color: var(--accent);
+    }
+
+    .confidence {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 6px;
+    }
+
+    .status-dot.pending { background: var(--warning); }
+    .status-dot.approved { background: var(--success); }
+    .status-dot.rejected { background: var(--danger); }
+
+    .card-section {
+      margin-bottom: 0.75rem;
+    }
+
+    .card-section label {
+      display: block;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 0.35rem;
+    }
+
+    .card-section p {
+      font-size: 0.85rem;
+      line-height: 1.6;
+      color: var(--text-primary);
+    }
+
+    .sources {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .source-tag {
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      background: rgba(108, 99, 255, 0.1);
+      color: var(--accent);
+      border: 1px solid rgba(108, 99, 255, 0.2);
+    }
+
+    .card-actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--text-secondary);
+    }
+
+    .empty-state svg {
+      width: 48px;
+      height: 48px;
+      margin-bottom: 1rem;
+      opacity: 0.4;
+    }
+
+    .loading {
+      display: none;
+      text-align: center;
+      padding: 1rem;
+      color: var(--accent);
+    }
+
+    .loading.active {
+      display: block;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .spinner {
+      width: 24px;
+      height: 24px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      display: inline-block;
+      margin-bottom: 0.5rem;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+
+    .section-header h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>⚡ CreditKasa Support AI Copilot</h1>
+    <div class="stats">
+      <span class="stat-badge pending" id="stat-pending">0 Pending</span>
+      <span class="stat-badge approved" id="stat-approved">0 Approved</span>
+      <span class="stat-badge rejected" id="stat-rejected">0 Rejected</span>
+    </div>
+  </header>
+
+  <div class="container">
+    <!-- Submit a new query -->
+    <div class="submit-section">
+      <h2>📩 Submit Customer Query</h2>
+      <div class="form-row">
+        <textarea id="query-input" rows="2" placeholder="Enter customer support message (e.g. 'Я втратив роботу і не можу сплатити кредит цього місяця')"></textarea>
+      </div>
+      <div class="form-row">
+        <input type="text" id="customer-id" placeholder="Customer / Loan ID (optional)" />
+        <button class="btn btn-primary" id="submit-btn" onclick="submitQuery()">🚀 Generate Draft</button>
+      </div>
+      <div class="loading" id="submit-loading">
+        <div class="spinner"></div>
+        <p>Classifying intent, retrieving policies, generating draft...</p>
+      </div>
+    </div>
+
+    <!-- Review Queue -->
+    <div class="section-header">
+      <h2>📋 Review Queue</h2>
+      <button class="btn btn-refresh" onclick="loadQueue()">↻ Refresh</button>
+    </div>
+    <div id="queue-container">
+      <div class="empty-state">
+        <p>No drafts in the queue yet. Submit a customer query above.</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = 'http://localhost:8000';
+
+    async function submitQuery() {
+      const query = document.getElementById('query-input').value.trim();
+      if (!query) return;
+
+      const customerId = document.getElementById('customer-id').value.trim() || null;
+      const loading = document.getElementById('submit-loading');
+      const btn = document.getElementById('submit-btn');
+
+      btn.disabled = true;
+      loading.classList.add('active');
+
+      try {
+        const res = await fetch(`${API_BASE}/api/generate-draft`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query, customer_id: customerId }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        document.getElementById('query-input').value = '';
+        document.getElementById('customer-id').value = '';
+        await loadQueue();
+      } catch (err) {
+        alert('Error: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        loading.classList.remove('active');
+      }
+    }
+
+    async function loadQueue() {
+      try {
+        const res = await fetch(`${API_BASE}/api/queue`);
+        const items = await res.json();
+        renderQueue(items);
+      } catch (err) {
+        console.error('Failed to load queue:', err);
+      }
+    }
+
+    function renderQueue(items) {
+      const container = document.getElementById('queue-container');
+
+      // Update stats
+      const counts = { pending_review: 0, approved: 0, rejected: 0 };
+      items.forEach(i => counts[i.status] = (counts[i.status] || 0) + 1);
+      document.getElementById('stat-pending').textContent = `${counts.pending_review} Pending`;
+      document.getElementById('stat-approved').textContent = `${counts.approved} Approved`;
+      document.getElementById('stat-rejected').textContent = `${counts.rejected} Rejected`;
+
+      if (items.length === 0) {
+        container.innerHTML = `<div class="empty-state"><p>No drafts in the queue yet.</p></div>`;
+        return;
+      }
+
+      // Sort: pending first, then by date desc
+      items.sort((a, b) => {
+        if (a.status === 'pending_review' && b.status !== 'pending_review') return -1;
+        if (b.status === 'pending_review' && a.status !== 'pending_review') return 1;
+        return new Date(b.created_at) - new Date(a.created_at);
+      });
+
+      container.innerHTML = items.map(item => `
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <span class="intent-badge">${item.intent}</span>
+              <span class="confidence">Confidence: ${(item.confidence * 100).toFixed(0)}%</span>
+            </div>
+            <div>
+              <span class="status-dot ${item.status === 'pending_review' ? 'pending' : item.status}"></span>
+              <span style="font-size:0.75rem;color:var(--text-secondary)">${item.status.replace('_', ' ')}</span>
+            </div>
+          </div>
+
+          <div class="card-section">
+            <label>Customer Query</label>
+            <p>${escapeHtml(item.customer_query)}</p>
+          </div>
+
+          <div class="card-section">
+            <label>AI Draft Response</label>
+            <p>${escapeHtml(item.draft_reply)}</p>
+          </div>
+
+          <div class="card-section">
+            <label>Cited Sources</label>
+            <div class="sources">
+              ${item.cited_sources.map(s => `<span class="source-tag">${escapeHtml(s)}</span>`).join('')}
+            </div>
+          </div>
+
+          ${item.status === 'pending_review' ? `
+          <div class="card-actions">
+            <button class="btn btn-success" onclick="reviewDraft('${item.id}', 'approve')">✓ Approve</button>
+            <button class="btn btn-danger" onclick="reviewDraft('${item.id}', 'reject')">✗ Reject</button>
+          </div>
+          ` : ''}
+        </div>
+      `).join('');
+    }
+
+    async function reviewDraft(id, action) {
+      try {
+        await fetch(`${API_BASE}/api/queue/${id}/${action}`, { method: 'POST' });
+        await loadQueue();
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    // Load on start
+    loadQueue();
+  </script>
+</body>
+</html>

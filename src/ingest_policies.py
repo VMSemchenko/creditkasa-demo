@@ -1,43 +1,63 @@
+"""
+Ingests all markdown documents from the /docs folder into Qdrant.
+Supports loading multiple files at once with metadata tagging.
+"""
 import os
-from dotenv import load_dotenv
+import glob
 from langchain_community.document_loaders import TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_openai import OpenAIEmbeddings
 from langchain_qdrant import QdrantVectorStore
 
-load_dotenv()
+from config import QDRANT_URL, COLLECTION_NAME, get_embeddings, OPENAI_API_KEY
 
-QDRANT_URL = "http://localhost:6333"
-COLLECTION_NAME = "creditkasa_policies"
+
+DOCS_DIR = os.path.join(os.path.dirname(__file__), '..', 'docs')
+
 
 def ingest_documents():
-    docs_path = os.path.join(os.path.dirname(__file__), '..', 'docs', 'mock_loan_policy.md')
-    print(f"Loading document from: {docs_path}")
-    
-    loader = TextLoader(docs_path)
-    documents = loader.load()
-    
-    print(f"Loaded {len(documents)} document(s). Splitting...")
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
-    docs = text_splitter.split_documents(documents)
-    
-    print(f"Split into {len(docs)} chunks. Initializing embeddings and vector store...")
-    embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
-    
-    # Store in Qdrant
-    qdrant = QdrantVectorStore.from_documents(
-        docs,
+    """Load all .md files from docs/, chunk them, and upsert into Qdrant."""
+    md_files = glob.glob(os.path.join(DOCS_DIR, '*.md'))
+    if not md_files:
+        print(f"No markdown files found in {DOCS_DIR}")
+        return
+
+    all_docs = []
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=500,
+        chunk_overlap=50,
+        separators=["\n## ", "\n### ", "\n\n", "\n", " "],
+    )
+
+    for filepath in md_files:
+        filename = os.path.basename(filepath)
+        print(f"  Loading: {filename}")
+        loader = TextLoader(filepath, encoding="utf-8")
+        documents = loader.load()
+        # Tag each chunk with the source document name
+        for doc in documents:
+            doc.metadata["source_document"] = filename
+        chunks = text_splitter.split_documents(documents)
+        all_docs.extend(chunks)
+
+    print(f"\nTotal chunks across {len(md_files)} file(s): {len(all_docs)}")
+    print("Generating embeddings and upserting into Qdrant...")
+
+    embeddings = get_embeddings()
+
+    QdrantVectorStore.from_documents(
+        all_docs,
         embeddings,
         url=QDRANT_URL,
         prefer_grpc=False,
         collection_name=COLLECTION_NAME,
-        force_recreate=True
+        force_recreate=True,
     )
-    
-    print("Ingestion complete! Data is now available in Qdrant.")
+
+    print(f"✅ Ingestion complete! Collection '{COLLECTION_NAME}' is ready.")
+
 
 if __name__ == "__main__":
-    if not os.getenv("OPENAI_API_KEY"):
-        print("ERROR: OPENAI_API_KEY is not set in the environment or .env file.")
+    if not OPENAI_API_KEY:
+        print("ERROR: OPENAI_API_KEY is not set. Create a .env file (see .env.example).")
     else:
         ingest_documents()

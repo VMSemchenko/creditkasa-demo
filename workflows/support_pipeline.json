@@ -1,0 +1,128 @@
+{
+  "name": "CreditKasa Support AI Copilot",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "support-query",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook – Incoming Query",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300],
+      "webhookId": "creditkasa-support"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8000/api/classify",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ query: $json.body.query, customer_id: $json.body.customer_id || null }) }}",
+        "options": {}
+      },
+      "id": "classify-intent",
+      "name": "1. Classify Intent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8000/api/search",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ query: $('Webhook – Incoming Query').item.json.body.query }) }}",
+        "options": {}
+      },
+      "id": "search-qdrant",
+      "name": "2. Search Policies (RAG)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [750, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8000/api/generate-draft",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ query: $('Webhook – Incoming Query').item.json.body.query, customer_id: $('Webhook – Incoming Query').item.json.body.customer_id || null }) }}",
+        "options": {}
+      },
+      "id": "generate-draft",
+      "name": "3. Generate Draft Response",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1000, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ status: 'queued_for_review', draft_id: $json.id, intent: $json.intent, confidence: $json.confidence, draft_reply: $json.draft_reply, cited_sources: $json.cited_sources }) }}",
+        "options": {}
+      },
+      "id": "respond-webhook",
+      "name": "4. Return Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1250, 300]
+    }
+  ],
+  "connections": {
+    "Webhook – Incoming Query": {
+      "main": [
+        [
+          {
+            "node": "1. Classify Intent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "1. Classify Intent": {
+      "main": [
+        [
+          {
+            "node": "2. Search Policies (RAG)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2. Search Policies (RAG)": {
+      "main": [
+        [
+          {
+            "node": "3. Generate Draft Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "3. Generate Draft Response": {
+      "main": [
+        [
+          {
+            "node": "4. Return Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}
