@@ -27,7 +27,7 @@ Customer Query
 | Component          | Technology                        |
 |--------------------|-----------------------------------|
 | Orchestration      | n8n (workflow automation)         |
-| LLM                | Google Gemini 2.0 Flash           |
+| LLM                | Google Gemini 2.5 Flash           |
 | Embeddings         | Google text-embedding-004         |
 | Vector DB          | Qdrant                            |
 | Backend API        | Python FastAPI                    |
