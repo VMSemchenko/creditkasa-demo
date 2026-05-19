@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   qdrant:
     image: qdrant/qdrant
@@ -10,11 +8,6 @@ services:
     volumes:
       - qdrant_storage:/qdrant/storage
     restart: always
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:6333/healthz"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
   n8n:
     image: docker.n8n.io/n8nio/n8n
@@ -31,9 +24,6 @@ services:
     volumes:
       - n8n_data:/home/node/.n8n
     restart: always
-    depends_on:
-      qdrant:
-        condition: service_healthy
 
   api:
     build: .
@@ -48,9 +38,6 @@ services:
       - ./src:/app/src
       - ./docs:/app/docs
     restart: always
-    depends_on:
-      qdrant:
-        condition: service_healthy
 
 volumes:
   qdrant_storage:

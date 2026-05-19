@@ -8,7 +8,7 @@ from langchain_community.document_loaders import TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_qdrant import QdrantVectorStore
 
-from config import QDRANT_URL, COLLECTION_NAME, get_embeddings, OPENAI_API_KEY
+from config import QDRANT_URL, COLLECTION_NAME, get_embeddings, GOOGLE_API_KEY
 
 
 DOCS_DIR = os.path.join(os.path.dirname(__file__), '..', 'docs')
@@ -57,7 +57,7 @@ def ingest_documents():
 
 
 if __name__ == "__main__":
-    if not OPENAI_API_KEY:
+    if not GOOGLE_API_KEY:
         print("ERROR: OPENAI_API_KEY is not set. Create a .env file (see .env.example).")
     else:
         ingest_documents()
