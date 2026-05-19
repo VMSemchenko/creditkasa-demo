@@ -27,8 +27,8 @@ Customer Query
 | Component          | Technology                        |
 |--------------------|-----------------------------------|
 | Orchestration      | n8n (workflow automation)         |
-| LLM                | OpenAI GPT-4o-mini                |
-| Embeddings         | text-embedding-3-small            |
+| LLM                | Google Gemini 2.0 Flash           |
+| Embeddings         | Google text-embedding-004         |
 | Vector DB          | Qdrant                            |
 | Backend API        | Python FastAPI                    |
 | Dashboard          | Vanilla HTML/CSS/JS               |
@@ -39,7 +39,7 @@ Customer Query
 ### Prerequisites
 - Docker & Docker Compose
 - Python 3.11+
-- OpenAI API key
+- Google Gemini API key (from [Google AI Studio](https://aistudio.google.com/apikey))
 
 ### 1. Clone & Configure
 
@@ -47,7 +47,7 @@ Customer Query
 git clone git@github.com:VMSemchenko/creditkasa-demo.git
 cd creditkasa-demo
 cp .env.example .env
-# Edit .env and add your OPENAI_API_KEY
+# Edit .env and add your GOOGLE_API_KEY
 ```
 
 ### 2. Start All Services

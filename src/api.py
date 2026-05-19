@@ -1,5 +1,6 @@
 """
 FastAPI backend for the CreditKasa Support AI Copilot.
+Uses Google Gemini for LLM inference.
 
 Endpoints:
   POST /api/classify       – Classify a customer query intent
@@ -17,11 +18,11 @@ from datetime import datetime, timezone
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-from openai import OpenAI
+from google import genai
 
 from config import (
-    OPENAI_API_KEY,
-    OPENAI_MODEL,
+    GOOGLE_API_KEY,
+    GEMINI_MODEL,
     QDRANT_URL,
     COLLECTION_NAME,
     get_embeddings,
@@ -44,7 +45,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-openai_client = OpenAI(api_key=OPENAI_API_KEY)
+gemini_client = genai.Client(api_key=GOOGLE_API_KEY)
 
 # ---------------------------------------------------------------------------
 # In-memory review queue (would be a DB in production)
@@ -85,6 +86,23 @@ class DraftResponse(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# Helper: call Gemini with JSON output
+# ---------------------------------------------------------------------------
+def call_gemini(system_prompt: str, user_message: str, temperature: float = 0.0) -> dict:
+    """Call Gemini and parse the JSON response."""
+    response = gemini_client.models.generate_content(
+        model=GEMINI_MODEL,
+        contents=user_message,
+        config=genai.types.GenerateContentConfig(
+            system_instruction=system_prompt,
+            temperature=temperature,
+            response_mime_type="application/json",
+        ),
+    )
+    return json.loads(response.text)
+
+
+# ---------------------------------------------------------------------------
 # 1. Intent Classification
 # ---------------------------------------------------------------------------
 CLASSIFY_SYSTEM_PROMPT = """You are an intent classifier for CreditKasa, a Ukrainian online lending company.
@@ -103,16 +121,7 @@ Respond with a valid JSON object only:
 @app.post("/api/classify", response_model=ClassificationResult)
 async def classify_query(payload: CustomerQuery):
     """Classify the customer query into a predefined intent category."""
-    completion = openai_client.chat.completions.create(
-        model=OPENAI_MODEL,
-        temperature=0,
-        response_format={"type": "json_object"},
-        messages=[
-            {"role": "system", "content": CLASSIFY_SYSTEM_PROMPT},
-            {"role": "user", "content": payload.query},
-        ],
-    )
-    result = json.loads(completion.choices[0].message.content)
+    result = call_gemini(CLASSIFY_SYSTEM_PROMPT, payload.query, temperature=0.0)
     return ClassificationResult(**result)
 
 
@@ -197,16 +206,7 @@ Customer ID: {payload.customer_id or 'N/A'}
 
 Please draft a response to the customer based on the above information."""
 
-    completion = openai_client.chat.completions.create(
-        model=OPENAI_MODEL,
-        temperature=0.3,
-        response_format={"type": "json_object"},
-        messages=[
-            {"role": "system", "content": GENERATE_SYSTEM_PROMPT},
-            {"role": "user", "content": user_message},
-        ],
-    )
-    generation = json.loads(completion.choices[0].message.content)
+    generation = call_gemini(GENERATE_SYSTEM_PROMPT, user_message, temperature=0.3)
 
     # Step 4: Queue for human review
     draft_id = str(uuid.uuid4())[:8]
@@ -258,4 +258,4 @@ async def reject_draft(draft_id: str):
 # ---------------------------------------------------------------------------
 @app.get("/api/health")
 async def health():
-    return {"status": "ok", "model": OPENAI_MODEL, "collection": COLLECTION_NAME}
+    return {"status": "ok", "model": GEMINI_MODEL, "collection": COLLECTION_NAME}
